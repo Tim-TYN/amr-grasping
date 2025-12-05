@@ -1,0 +1,103 @@
+<?xml version="1"?>
+
+<launch>
+    <!-- Start LIMO -->
+    <include file="$(find limo_bringup)/launch/limo_start.launch">
+        <arg name="pub_odom_tf" value="false"/>
+    </include>
+
+    <include file="$(find astra_camera)/launch/dabai_u3.launch" />
+    
+    <!-- Robot Pose EKF Node -->
+    <node pkg="robot_pose_ekf" name="robot_pose_ekf" type="robot_pose_ekf" output="log">
+        <param name="output_frame" value="odom" />
+        <param name="base_footprint_frame" value="base_link"/>
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager"/> 
+    
+    <!-- Z-PassThrough --> 
+    <node pkg="nodelet" type="nodelet" name="z_filter" args="load pcl/PassThrough pcl_manager"> 
+      <param name="filter_field_name" value="y"/> 
+      <param name="filter_limit_min" value="-0.8"/> 
+      <param name="filter_limit_max" value="0.1"/> 
+      <param name="keep_organized" value="false"/> 
+      <remap from="~input" to="/camera/depth/points"/> 
+      <remap from="~output" to="/obstacles/depth_points_filtered"/> 
+    </node> 
+
+    <!-- GMapping Node -->
+    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="log">
+        <param name="map_update_interval" value="5.0"/>
+        <param name="maxUrange" value="16.0"/>
+        <param name="sigma" value="0.05"/>
+        <param name="kernelSize" value="1"/>
+        <param name="lstep" value="0.05"/>
+        <param name="astep" value="0.05"/>
+        <param name="iterations" value="5"/>
+        <param name="lsigma" value="0.075"/>
+        <param name="ogain" value="3.0"/>
+        <param name="lskip" value="0"/>
+        <param name="srr" value="0.1"/>
+        <param name="srt" value="0.2"/>
+        <param name="str" value="0.1"/>
+        <param name="stt" value="0.2"/>
+        <param name="linearUpdate" value="1.0"/>
+        <param name="angularUpdate" value="0.5"/>
+        <param name="temporalUpdate" value="3.0"/>
+        <param name="resampleThreshold" value="0.5"/>
+        <param name="particles" value="30"/>
+        <param name="xmin" value="-50"/>
+        <param name="ymin" value="-50"/>
+        <param name="xmax" value="50"/>
+        <param name="ymax" value="50"/>
+        <param name="delta" value="0.05"/>
+        <param name="llsamplerange" value="0.01"/>
+        <param name="llsamplestep" value="0.01"/>
+        <param name="lasamplerange" value="0.005"/>
+        <param name="lasamplestep" value="0.005"/>
+        <remap from="scan" to="/scan"/>
+    </node>
+
+    <!-- Start Object Finder-->
+    <node pkg="limo_explore" type="object_finder.py" name="object_finder" output="screen">
+        <param name="prompt" value="a water bottle"/>
+        <param name="threshold" value="0.15"/>
+        <param name="image_encoder_engine" value="/home/agilex/nanoowl/data/owl_image_encoder_patch32.engine"/>
+        <param name="min_hits" value="5"/>
+        <param name="max_age_sec" value="2.0"/>
+        <param name="publish_debug" value="true"/>
+
+        <param name="rgb_topic" value="/camera/color/image_raw"/>
+        <param name="depth_topic" value="/camera/depth/image_raw"/>
+        <param name="info_topic" value="/camera/color/camera_info"/>
+        <param name="camera_frame" value="camera_link"/>
+        <param name="target_frame" value="map"/>
+    </node>
+            
+    <!-- Navigation -->
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="log">
+        <rosparam file="$(find limo_explore)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find limo_explore)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+        <rosparam file="$(find limo_explore)/config/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find limo_explore)/config/global_costmap_params.yaml" command="load" />
+
+        <rosparam file="$(find limo_explore)/config/move_base_params.yaml" command="load" />
+        <rosparam file="$(find limo_explore)/config/base_local_planner_params.yaml" command="load" />
+    </node>
+
+    <!-- Cam Coverage Map -->
+    <node pkg="limo_explore" type="cam_coverage.py" name="cam_coverage" output="screen">
+        <param name="map_topic" value="/map"/>
+        <param name="coverage_topic" value="/cam_coverage"/>
+        <param name="range_m" value="1.5"/>
+        <param name="frame_camera" value="camera_link"/>
+        <param name="camera_info_topic" value="/camera/color/camera_info"/>
+    </node>
+
+    <!-- Goal Planning (Frontier) -->
+    <node pkg="limo_explore" type="straight_planner.py" name="straight_planner" output="screen">
+    </node>
+
+  
+</launch>
