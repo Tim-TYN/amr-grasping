@@ -13,6 +13,16 @@ The project implements a **fully onboard autonomous pipeline** that enables a mo
 
 All components are designed for real-time execution on embedded hardware.
 
+amr-grasping/
+├── limo_explore/        # ROS package with exploration, coverage, and object finding nodes
+│   ├── scripts/         # Core Python nodes (ObjectFinder, CamCoverage, planners, ...)
+│   ├── launch/          # Launch files for the system
+│   ├── CMakeLists.txt
+│   └── package.xml
+├── traj_imgs/           # Example / debug images for trajectories
+├── traj_logs/           # Saved trajectory logs (*.txt)
+└── README.md
+
 ## Key Components
 - **SLAM & Navigation**  
   EKF-based odometry fusion, `slam_gmapping`, `move_base`
