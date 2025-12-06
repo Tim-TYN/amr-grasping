@@ -139,8 +139,11 @@ class CamCoverage:
 
     def _mark_region_seen(self, origin_xy, radius_m):
         """
-        Mark all cells within a given radius around origin_xy as seen (=100)
-        in the accumulated coverage.
+        Mark a circular region around the camera origin as seen in cov_accum.
+
+        Args:
+            origin_xy (tuple[float, float]): Camera position (x, y) in map frame [m].
+            radius_m (float): Radius of the region to mark as seen [m].
         """
         if self.map is None or self.cov_accum is None:
             return
@@ -188,8 +191,11 @@ class CamCoverage:
     
     def _init_cov_from_map(self, map_msg):
         """
-        Initialize (or reinitialize) the accumulated coverage arrays/messages
-        to match the geometry of `map_msg`.
+        Initialize or reinitialize the accumulated coverage grid to match a map.
+
+        Args:
+            map_msg (OccupancyGrid): Reference map whose geometry (size, res, origin)
+                                     is used to size cov_accum and cov_msg.
         """
         H, W = map_msg.info.height, map_msg.info.width
         self.cov_accum = np.full((H, W), -1, dtype=np.int16)
@@ -220,7 +226,15 @@ class CamCoverage:
 
     def _map_geom_key(self, m):
         """
-        Build a tuple that captures the geometry of a map (used to detect changes).
+        Build a hashable key that describes the geometry of a map.
+
+        Args:
+            m (OccupancyGrid): Map message.
+
+        Returns:
+            tuple:
+                (resolution, width, height, origin_x, origin_y, frame_id)
+                used to detect changes in map geometry.
         """
         info = m.info
         ori  = info.origin.position
@@ -228,8 +242,15 @@ class CamCoverage:
 
     def _world_to_cell(self, x, y):
         """
-        Convert world (x, y) coordinates to integer cell indices (cx, cy).
-        Returns None if coordinates are outside the map bounds.
+        Convert world coordinates into integer map indices.
+
+        Args:
+            x (float): World x-coordinate [m].
+            y (float): World y-coordinate [m].
+
+        Returns:
+            tuple[int, int] | None:
+                (cx, cy) cell indices if inside map bounds, otherwise None.
         """
         res = self.map.info.resolution
         ox  = self.map.info.origin.position.x
@@ -242,8 +263,16 @@ class CamCoverage:
 
     def _occ_at(self, cx, cy):
         """
-        Return the occupancy value at cell (cx, cy):
-        -1 = unknown, 0 = free, >=50 = occupied.
+        Retrieve occupancy value at a given map cell.
+
+        Args:
+            cx (int): Cell x-index.
+            cy (int): Cell y-index.
+
+        Returns:
+            int:
+                Occupancy value:
+                -1 = unknown, 0 = free, >= 50 = occupied.
         """
 
         idx = cy * self.map.info.width + cx
@@ -252,9 +281,18 @@ class CamCoverage:
 
     def _cast_ray(self, origin_xy, ang, steps, cov_inst):
         """
-        Cast a single ray in direction `ang` for up to `steps` cells.
-        - Marks free/unknown map cells as 100 in `cov_inst`.
-        - Stops when an occupied cell (>= 50) is reached or bounds exceeded.
+        Cast a single ray from the camera origin into the map.
+
+        For each step:
+        - Converts ray sample to map cell.
+        - Stops when hitting an occupied cell or leaving bounds.
+        - Marks free/unknown cells as 100 in cov_inst.
+
+        Args:
+            origin_xy (tuple[float, float]): Ray origin (x, y) in map frame [m].
+            ang (float): Ray direction in radians.
+            steps (int): Maximum number of steps (distance / resolution).
+            cov_inst (np.ndarray): Instantaneous coverage grid (HxW) to update.
         """
         res = self.map.info.resolution
         x0, y0 = origin_xy

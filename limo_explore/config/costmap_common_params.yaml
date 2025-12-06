@@ -1,0 +1,5 @@
+footprint: [[-0.15, -0.10], [-0.15, 0.10], [0.15, 0.10], [0.15, -0.10]]
+transform_tolerance: 0.13
+map_type: costmap
+obstacle_range: 2.5
+raytrace_range: 3.5
