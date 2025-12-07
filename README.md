@@ -14,7 +14,7 @@ The project implements a **fully onboard autonomous pipeline** that enables a mo
 All components are designed for real-time execution on embedded hardware.
 
 ## Platform
-- **Robot**: LIMO Cobot (mobile base with robotic arm)
+- **Robot**: LIMO COBOT (mobile base with robotic arm)
 - **Sensors**: 2D LiDAR, RGB-D camera, IMU
 - **Framework**: ROS (Noetic), fully onboard execution
 
