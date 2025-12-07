@@ -18,15 +18,34 @@ All components are designed for real-time execution on embedded hardware.
 ```text
 amr-grasping/
 ├── limo_explore/        # ROS package with exploration, coverage, and object finding nodes
-│   ├── scripts/         # Core Python nodes (ObjectFinder, CamCoverage, planners, ...)
+│   ├── scripts/         # Core Python nodes
 │   ├── launch/          # Launch files for the system
+│   ├── config/          # YAML configuration (costmaps, localization, etc.)
+│   ├── rviz/            # Saved RViz configurations
 │   ├── CMakeLists.txt
 │   └── package.xml
-├── traj_imgs/           # Example and debug images of recorded trajectories
-├── traj_logs/           # Logged robot trajectories (*.txt)
+├── traj_imgs/           # Images with the trajectories
+├── traj_logs/           # Saved trajectory logs (*.txt)
 └── README.md
 ```
 
+### Launch Files (`limo_explore/launch/`)
+
+- **`frontier_demo.launch`**  
+  Starts autonomous exploration using the **FrontierPlanner**, including navigation and camera coverage mapping.
+
+- **`straight_demo.launch`**  
+  Starts autonomous exploration using the **StraightPlanner**.
+
+- **`rviz.launch`**  
+  Launches **RViz** with the preconfigured visualization settings from the `rviz/` directory.
+
+- **`object_detection.launch`**  
+  Starts only the **object detection pipeline** (`ObjectFinder`), without exploration or navigation.
+
+- **`nav.launch`**  
+  Only starts **localization, mapping, and move_base**.
+  
 ## Key Components
 - **SLAM & Navigation**  
   EKF-based odometry fusion, `slam_gmapping`, `move_base`
